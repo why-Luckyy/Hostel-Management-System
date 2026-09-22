@@ -1,11 +1,24 @@
 const express=require("express")
 const router=express.Router()
 
-const authMiddlerware=require("../middleware/authMiddleware");
+const authMiddleware=require("../middleware/authMiddleware");
+const wardenMiddleware = require("../middleware/wardenMiddleware");
+
 
 const {getMyWardenProfile, getMyHostelStudents}=require("../controllers/wardenController");
 
-router.get("/me",authMiddlerware,getMyWardenProfile);
-router.get("/students",authMiddlerware,getMyHostelStudents);
+router.get(
+    "/me",
+    authMiddleware,
+    wardenMiddleware,
+    getMyWardenProfile
+);
 
-module.exports=router;
+router.get(
+    "/students",
+    authMiddleware,
+    wardenMiddleware,
+    getMyHostelStudents
+);
+
+module.exports = router;

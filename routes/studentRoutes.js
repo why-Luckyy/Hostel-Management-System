@@ -6,7 +6,8 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const {
     createStudentProfile,
-    getMyRoom
+    getMyRoom,
+    getMyProfile
 } = require("../controllers/studentController");
 
 
@@ -24,6 +25,8 @@ router.get(
     authMiddleware,
     getMyRoom
 );
+
+router.get("/me", authMiddleware, getMyProfile);
 
 
 module.exports = router;

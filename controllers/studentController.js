@@ -130,9 +130,33 @@ const getMyRoom = async (req, res) => {
     }
 };
 
+const getMyProfile = async (req, res) => {
+    try {
+        const student = await Student.findOne({
+            user: req.user.userId
+        });
 
+        if (!student) {
+            return res.status(404).json({
+                message: "Student profile not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Student profile fetched successfully",
+            student
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
 
 module.exports = {
     createStudentProfile,
-    getMyRoom
+    getMyRoom,
+    getMyProfile
 };
