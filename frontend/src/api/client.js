@@ -1,49 +1,51 @@
 import axios from 'axios';
-import storage from '../utils/storage';
+import { getToken } from './storage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Base API URL from environment variable or localhost fallback
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
-const client = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
+/**
+ * Axios instance configured for the Hostel Management System backend.
+ */
+const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
-let unauthorizedHandler = null;
-
-export const setUnauthorizedHandler = (handler) => {
-  unauthorizedHandler = handler;
-};
-
-// Request interceptor: attach JWT Bearer token
-client.interceptors.request.use(
+// Request Interceptor: Automatically attaches JWT Bearer token to every request
+api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await storage.getItem('jwt_token');
+      const token = await getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch (err) {
-      console.warn('Error reading token from storage:', err);
+    } catch (error) {
+      console.error('Error attaching auth token to request:', error);
     }
     return config;
   },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor: catch 401
-client.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response && error.response.status === 401) {
-      if (unauthorizedHandler) {
-        unauthorizedHandler();
-      }
-    }
+  (error) => {
     return Promise.reject(error);
   }
 );
 
-export default client;
+/**
+ * Helper to extract user-friendly error messages from backend responses.
+ * Great for explaining error handling in a college viva!
+ */
+export const getErrorMessage = (error) => {
+  if (error.response && error.response.data && error.response.data.message) {
+    return error.response.data.message;
+  }
+  if (error.request) {
+    return 'Unable to reach backend server. Please check your network and ensure the backend is running.';
+  }
+  return error.message || 'An unexpected error occurred.';
+};
+
+export default api;

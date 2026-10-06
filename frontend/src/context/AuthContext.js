@@ -1,112 +1,87 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import storage from '../utils/storage';
-import authApi from '../api/authApi';
-import { setUnauthorizedHandler } from '../api/client';
+import api, { getErrorMessage } from '../api/client';
+import { saveToken, saveUser, getToken, getUser, clearAuth } from '../api/storage';
 
-export const AuthContext = createContext({
-  user: null,
-  token: null,
-  role: null,
-  loading: true,
-  login: async () => {},
-  logout: async () => {},
-  refreshUser: async () => {},
-});
+// 1. Create Context
+export const AuthContext = createContext();
 
+/**
+ * AuthProvider component
+ * Manages global authentication state: token, user info, and role.
+ * Restores the user session automatically on app launch from SecureStore.
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const logout = async () => {
-    try {
-      await storage.removeItem('jwt_token');
-    } catch (err) {
-      console.warn('Error clearing token:', err);
-    }
-    setToken(null);
-    setUser(null);
-  };
-
-  const refreshUser = async () => {
-    try {
-      const data = await authApi.getMe();
-      if (data && data.user) {
-        setUser(data.user);
-        return data.user;
-      }
-    } catch (error) {
-      console.warn('Failed to refresh user profile:', error.message);
-    }
-    return null;
-  };
-
-  const login = async (email, password) => {
-    const data = await authApi.login(email, password);
-    if (data && data.token) {
-      await storage.setItem('jwt_token', data.token);
-      setToken(data.token);
-
-      // Fetch confirmed profile from /api/auth/me
-      try {
-        const meData = await authApi.getMe();
-        if (meData && meData.user) {
-          setUser(meData.user);
-          return meData.user;
-        }
-      } catch (err) {
-        // Fallback to login response user if me fails
-        if (data.user) {
-          setUser(data.user);
-          return data.user;
-        }
-      }
-    }
-    throw new Error(data?.message || 'Login failed');
-  };
-
-  // Restore session on app launch
+  // Load saved session on app startup
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const savedToken = await storage.getItem('jwt_token');
-        if (savedToken) {
+        const savedToken = await getToken();
+        const savedUser = await getUser();
+
+        if (savedToken && savedUser) {
           setToken(savedToken);
-          const meData = await authApi.getMe();
-          if (meData && meData.user) {
-            setUser(meData.user);
-          } else {
-            await logout();
-          }
+          setUser(savedUser);
         }
       } catch (error) {
-        console.warn('Session restoration failed:', error.message);
-        await logout();
+        console.error('Failed to restore session:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-
-    // Register 401 callback
-    setUnauthorizedHandler(() => {
-      logout();
-    });
 
     restoreSession();
   }, []);
 
-  const role = user?.role ? user.role.toLowerCase() : null;
+  // Login function calling POST /api/auth/login
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', {
+        email: email.trim(),
+        password,
+      });
+
+      const { token: receivedToken, user: receivedUser } = response.data;
+
+      // Save to device secure storage
+      await saveToken(receivedToken);
+      await saveUser(receivedUser);
+
+      // Update React state
+      setToken(receivedToken);
+      setUser(receivedUser);
+
+      return { success: true, user: receivedUser };
+    } catch (error) {
+      const message = getErrorMessage(error);
+      return { success: false, message };
+    }
+  };
+
+  // Logout function
+  const logout = async () => {
+    try {
+      await clearAuth();
+      setToken(null);
+      setUser(null);
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
-        role,
-        loading,
+        isLoading,
+        isAuthenticated: !!token,
+        role: user?.role || null,
         login,
         logout,
-        refreshUser,
       }}
     >
       {children}
@@ -114,6 +89,11 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
-
-export default AuthContext;
+// Custom hook for consuming auth in components easily
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

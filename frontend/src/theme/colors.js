@@ -1,27 +1,36 @@
+// Clean, modern color palette for Hostel Management System
 export const colors = {
-  primary: '#2563eb',
-  primaryDark: '#1d4ed8',
-  primaryLight: '#dbeafe',
-  secondary: '#0f172a',
-  background: '#f8fafc',
-  card: '#ffffff',
-  textPrimary: '#0f172a',
-  textSecondary: '#64748b',
-  textMuted: '#94a3b8',
-  border: '#e2e8f0',
-  borderLight: '#f1f5f9',
-  success: '#16a34a',
-  successBg: '#dcfce7',
-  warning: '#d97706',
-  warningBg: '#fef3c7',
-  danger: '#dc2626',
-  dangerBg: '#fee2e2',
-  info: '#0284c7',
-  infoBg: '#e0f2fe',
-  pending: '#7c3aed',
-  pendingBg: '#ede9fe',
-  white: '#ffffff',
-  black: '#000000',
-};
+  primary: '#2563EB',       // Blue
+  primaryDark: '#1D4ED8',
+  primaryLight: '#DBEAFE',
+  
+  secondary: '#0F172A',     // Slate Dark
+  accent: '#06B6D4',        // Cyan
+  
+  background: '#F8FAFC',    // Light cool grey background
+  surface: '#FFFFFF',       // Card / modal white background
+  
+  text: '#0F172A',          // Heading / primary text
+  textSecondary: '#475569', // Subtitle text
+  textMuted: '#94A3B8',     // Placeholders / disabled
+  
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
+  
+  success: '#10B981',       // Emerald green
+  successLight: '#D1FAE5',
+  
+  warning: '#F59E0B',       // Amber
+  warningLight: '#FEF3C7',
+  
+  danger: '#EF4444',        // Red
+  dangerLight: '#FEE2E2',
 
-export default colors;
+  // Role badge colors
+  adminBadge: '#7C3AED',
+  adminBadgeBg: '#EDE9FE',
+  wardenBadge: '#D97706',
+  wardenBadgeBg: '#FEF3C7',
+  studentBadge: '#2563EB',
+  studentBadgeBg: '#DBEAFE',
+};
